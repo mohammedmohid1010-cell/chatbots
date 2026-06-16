@@ -8,8 +8,12 @@ import { processMessage } from "./conversation.js";
 import { handleAdminCommand } from "./adminCommands.js";
 
 // ── Incoming WhatsApp messages ───────────────────────────────────
+let lastInbound = null;
+
 client.on("message", async (msg) => {
   try {
+    lastInbound = { from: digits(msg.from), body: (msg.body || "").slice(0, 40), fromMe: msg.fromMe, at: new Date().toISOString() };
+    console.log("[msg] in:", JSON.stringify(lastInbound));
     if (msg.fromMe) return;
     if (!msg.from.endsWith("@c.us")) return; // ignore groups, status, broadcasts
     const number = digits(msg.from);
@@ -38,7 +42,9 @@ const app = express();
 app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
-app.get("/health", (_req, res) => res.json({ ok: true, ready, service: "techstop-whatsapp-bot" }));
+app.get("/health", (_req, res) =>
+  res.json({ ok: true, ready, admin: config.adminNumber, lastInbound, service: "techstop-whatsapp-bot" })
+);
 
 app.get("/qr", (_req, res) => {
   if (ready) return res.send("<h2 style='font-family:sans-serif'>✅ WhatsApp is already linked. No QR needed.</h2>");
