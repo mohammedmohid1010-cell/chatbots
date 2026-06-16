@@ -10,7 +10,9 @@ import { handleAdminCommand } from "./adminCommands.js";
 // ── Incoming WhatsApp messages ───────────────────────────────────
 let lastInbound = null;
 
-client.on("message", async (msg) => {
+// Use "message_create" (fires reliably for incoming on all WhatsApp Web
+// versions); we ignore our own outgoing messages via msg.fromMe below.
+client.on("message_create", async (msg) => {
   try {
     lastInbound = { from: digits(msg.from), body: (msg.body || "").slice(0, 40), fromMe: msg.fromMe, at: new Date().toISOString() };
     console.log("[msg] in:", JSON.stringify(lastInbound));
