@@ -14,12 +14,23 @@ let lastInbound = null;
 // versions); we ignore our own outgoing messages via msg.fromMe below.
 client.on("message_create", async (msg) => {
   try {
-    lastInbound = { from: digits(msg.from), body: (msg.body || "").slice(0, 40), fromMe: msg.fromMe, at: new Date().toISOString() };
-    console.log("[msg] in:", JSON.stringify(lastInbound));
     if (msg.fromMe) return;
-    if (!msg.from.endsWith("@c.us")) return; // ignore groups, status, broadcasts
-    const number = digits(msg.from);
+    // Only handle 1:1 chats — skip groups, status broadcasts, channels.
+    if (msg.from.endsWith("@g.us") || msg.from.includes("broadcast") || msg.from.endsWith("@newsletter")) return;
+
+    // Resolve the sender's REAL phone number. WhatsApp now often addresses
+    // senders by a privacy "@lid" id instead of their number (so msg.from can be
+    // a LID) — getContact() returns the true phone number.
+    let number = digits(msg.from);
+    try {
+      const contact = await msg.getContact();
+      const real = digits(contact?.number || contact?.id?.user || "");
+      if (real) number = real;
+    } catch { /* keep msg.from digits */ }
+
     const body = (msg.body || "").trim();
+    lastInbound = { from: number, body: body.slice(0, 40), fromMe: msg.fromMe, at: new Date().toISOString() };
+    console.log("[msg] in:", JSON.stringify(lastInbound));
     if (!body) return;
 
     // Admin channel — commands only.
