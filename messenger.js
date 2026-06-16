@@ -1,6 +1,7 @@
 import pkg from "whatsapp-web.js";
 const { Client, LocalAuth } = pkg;
 import qrcode from "qrcode-terminal";
+import qrImage from "qrcode";
 import { sleep, rand, digits, chatIdFor } from "./util.js";
 import { db } from "./database.js";
 
@@ -14,12 +15,16 @@ export const client = new Client({
 });
 
 export let lastQr = "";
+export let lastQrImage = "";
 export let ready = false;
 
 client.on("qr", (qr) => {
   lastQr = qr;
-  console.log("\n📱 Scan this QR with WhatsApp (Linked Devices):\n");
+  console.log("\n📱 Scan this QR with WhatsApp → Linked Devices.");
+  console.log("🔗 No domain? Open THIS link in any browser to get a scannable QR:");
+  console.log("   https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=" + encodeURIComponent(qr) + "\n");
   qrcode.generate(qr, { small: true });
+  qrImage.toDataURL(qr).then((url) => { lastQrImage = url; }).catch(() => {});
 });
 client.on("ready", () => { ready = true; console.log("✅ WhatsApp client ready."); });
 client.on("auth_failure", (m) => console.error("[wa] auth failure:", m));

@@ -3,7 +3,7 @@ import cors from "cors";
 import { config } from "./config.js";
 import { db } from "./database.js";
 import { digits } from "./util.js";
-import { client, canReply, ready, lastQr } from "./messenger.js";
+import { client, canReply, ready, lastQrImage } from "./messenger.js";
 import { processMessage } from "./conversation.js";
 import { handleAdminCommand } from "./adminCommands.js";
 
@@ -41,10 +41,16 @@ app.use(express.json());
 app.get("/health", (_req, res) => res.json({ ok: true, ready, service: "techstop-whatsapp-bot" }));
 
 app.get("/qr", (_req, res) => {
-  if (ready) return res.send("✅ WhatsApp is already linked. No QR needed.");
-  if (!lastQr) return res.send("⏳ QR not generated yet — check back in a few seconds.");
+  if (ready) return res.send("<h2 style='font-family:sans-serif'>✅ WhatsApp is already linked. No QR needed.</h2>");
+  if (!lastQrImage) {
+    return res.send("<meta http-equiv='refresh' content='3'><h2 style='font-family:sans-serif'>⏳ Generating QR… this page refreshes automatically.</h2>");
+  }
   res.send(
-    `<pre>Scan in WhatsApp → Linked Devices.\nIf this looks broken, scan the ASCII QR in the Railway deploy logs instead.\n\n${lastQr}</pre>`
+    "<meta http-equiv='refresh' content='20'>" +
+    "<div style='text-align:center;font-family:sans-serif;padding:24px'>" +
+    "<h2>Scan with WhatsApp → Linked Devices → Link a Device</h2>" +
+    `<img src="${lastQrImage}" style="width:320px;height:320px"/>` +
+    "<p>Page refreshes every 20s. Once linked it will say ✅.</p></div>"
   );
 });
 
